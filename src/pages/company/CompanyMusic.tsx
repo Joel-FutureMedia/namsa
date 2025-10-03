@@ -6,14 +6,22 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { companyAPI } from '@/services/api';
 import { ArtistWork } from '@/types';
-import { Play, Download, Plus } from 'lucide-react';
+import { Play, Download, Plus, Video, Headphones } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import VideoPlayerDialog from '@/components/common/VideoPlayerDialog';
 
 const CompanyMusic: React.FC = () => {
   const [music, setMusic] = useState<ArtistWork[]>([]);
   const [loading, setLoading] = useState(true);
+  const [videoPlayerOpen, setVideoPlayerOpen] = useState(false);
+  const [currentVideo, setCurrentVideo] = useState<{ url: string; title: string } | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const isVideoFile = (fileType: string) => {
+    const videoTypes = ['video', 'mp4', 'avi', 'mov', 'mkv', 'webm'];
+    return videoTypes.some(type => fileType?.toLowerCase().includes(type));
+  };
 
   useEffect(() => {
     const loadMusic = async () => {
@@ -89,6 +97,20 @@ const CompanyMusic: React.FC = () => {
       render: (value) => value || 'N/A',
     },
     {
+      key: 'fileType',
+      header: 'Type',
+      accessor: 'fileType',
+      render: (value) => {
+        const isVideo = isVideoFile(value || '');
+        return (
+          <Badge variant={isVideo ? 'default' : 'secondary'} className="gap-1">
+            {isVideo ? <Video className="w-3 h-3" /> : <Headphones className="w-3 h-3" />}
+            {isVideo ? 'Video' : 'Audio'}
+          </Badge>
+        );
+      }
+    },
+    {
       key: 'status',
       header: 'Status',
       accessor: 'status',
@@ -106,12 +128,17 @@ const CompanyMusic: React.FC = () => {
       icon: Play,
       onClick: (music) => {
         if (music.fileUrl) {
-          const audio = new Audio(music.fileUrl);
-          audio.play().catch(console.error);
+          if (isVideoFile(music.fileType)) {
+            setCurrentVideo({ url: music.fileUrl, title: music.title });
+            setVideoPlayerOpen(true);
+          } else {
+            const audio = new Audio(music.fileUrl);
+            audio.play().catch(console.error);
+          }
         } else {
           toast({
-            title: "Audio Not Available",
-            description: "No audio file available for this track",
+            title: "Media Not Available",
+            description: "No media file available for this track",
             variant: "destructive",
           });
         }
@@ -161,6 +188,16 @@ const CompanyMusic: React.FC = () => {
           searchable={true}
           emptyMessage="No approved music available"
         />
+
+        {/* Video Player Dialog */}
+        {currentVideo && (
+          <VideoPlayerDialog
+            open={videoPlayerOpen}
+            onOpenChange={setVideoPlayerOpen}
+            videoUrl={currentVideo.url}
+            title={currentVideo.title}
+          />
+        )}
       </div>
     </DashboardLayout>
   );

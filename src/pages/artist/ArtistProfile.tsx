@@ -291,9 +291,41 @@ const ArtistProfile: React.FC = () => {
       setSaving(true);
 
       if (isCreating) {
+        // First upload all pending documents before creating profile
+        const uploadPromises = [];
+
+        if (documentUploads.passportPhoto.file && !documents?.passportPhoto) {
+          uploadPromises.push(artistAPI.uploadPassportPhoto(documentUploads.passportPhoto.file, documentUploads.passportPhoto.title));
+        }
+        if (documentUploads.idDocument.file && !documents?.idDocument) {
+          uploadPromises.push(artistAPI.uploadIdDocument(documentUploads.idDocument.file, documentUploads.idDocument.title));
+        }
+        if (documentUploads.bankConfirmationLetter.file && !documents?.bankConfirmationLetter) {
+          uploadPromises.push(artistAPI.uploadBankConfirmationLetter(documentUploads.bankConfirmationLetter.file, documentUploads.bankConfirmationLetter.title));
+        }
+        if (documentUploads.proofOfPayment.file && !documents?.proofOfPayment) {
+          uploadPromises.push(artistAPI.uploadProofOfPayment(documentUploads.proofOfPayment.file, documentUploads.proofOfPayment.title));
+        }
+
+        // Wait for all document uploads to complete
+        if (uploadPromises.length > 0) {
+          await Promise.all(uploadPromises).catch(err => {
+            throw new Error('Some documents failed to upload: ' + (err?.response?.data?.message || err.message));
+          });
+        }
+
         const created = await artistAPI.createProfile(form);
         setProfile(created);
         setIsCreating(false);
+
+        // Clear document uploads after successful profile creation
+        setDocumentUploads({
+          passportPhoto: { file: null, title: 'Passport Photo' },
+          idDocument: { file: null, title: 'ID Document' },
+          bankConfirmationLetter: { file: null, title: 'Bank Confirmation Letter' },
+          proofOfPayment: { file: null, title: 'Proof of Payment' },
+        });
+
         toast({
           title: "Profile Created",
           description: "Your profile has been submitted for review.",

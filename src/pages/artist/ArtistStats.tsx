@@ -14,10 +14,10 @@ const ArtistStats: React.FC = () => {
       try {
         setLoading(true);
         const data = await artistAPI.getStats().catch(() => ({
-          totalUploaded: 0,
-          totalApproved: 0,
-          totalPending: 0,
-          totalRejected: 0,
+          totalUploads: 0,
+          approvedMusic: 0,
+          pendingMusic: 0,
+          rejectedMusic: 0,
         } as any));
         setStats(data);
       } finally {
@@ -42,10 +42,10 @@ const ArtistStats: React.FC = () => {
   return (
     <DashboardLayout title="Statistics">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatsCard title="Uploaded" value={stats?.totalUploaded || 0} description="Your tracks" icon={Music} />
-        <StatsCard title="Approved" value={stats?.totalApproved || 0} description="Greenlit" icon={CheckCircle} />
-        <StatsCard title="Pending" value={stats?.totalPending || 0} description="Awaiting review" icon={FileText} />
-        <StatsCard title="Rejected" value={stats?.totalRejected || 0} description="See notes" icon={BarChart3} />
+        <StatsCard title="Total Uploads" value={stats?.totalUploads || 0} description="Your tracks" icon={Music} />
+        <StatsCard title="Approved" value={stats?.approvedMusic || 0} description="Greenlit" icon={CheckCircle} />
+        <StatsCard title="Pending" value={stats?.pendingMusic || 0} description="Awaiting review" icon={FileText} />
+        <StatsCard title="Rejected" value={stats?.rejectedMusic || 0} description="See notes" icon={BarChart3} />
       </div>
     </DashboardLayout>
   );

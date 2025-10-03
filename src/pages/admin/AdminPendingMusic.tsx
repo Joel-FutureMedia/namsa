@@ -11,30 +11,40 @@ import { Textarea } from '@/components/ui/textarea';
 import { adminAPI } from '@/services/api';
 import { ArtistWork } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  CheckCircle, 
-  XCircle, 
-  Play, 
-  Download, 
-  Eye, 
+import {
+  CheckCircle,
+  XCircle,
+  Play,
+  Download,
+  Eye,
   Music,
   Clock,
   User,
   Calendar,
-  FileText
+  FileText,
+  Video,
+  Headphones
 } from 'lucide-react';
+import VideoPlayerDialog from '@/components/common/VideoPlayerDialog';
 
 const AdminPendingMusic: React.FC = () => {
   const [music, setMusic] = useState<ArtistWork[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<number | null>(null);
   const [selectedMusic, setSelectedMusic] = useState<ArtistWork | null>(null);
+  const [videoPlayerOpen, setVideoPlayerOpen] = useState(false);
+  const [currentVideo, setCurrentVideo] = useState<{ url: string; title: string } | null>(null);
   const [isrcCode, setIsrcCode] = useState('');
   const [rejectionNotes, setRejectionNotes] = useState('');
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const { toast } = useToast();
+
+  const isVideoFile = (fileType: string) => {
+    const videoTypes = ['video', 'mp4', 'avi', 'mov', 'mkv', 'webm'];
+    return videoTypes.some(type => fileType?.toLowerCase().includes(type));
+  };
 
   useEffect(() => {
     loadMusic();
@@ -200,6 +210,7 @@ const AdminPendingMusic: React.FC = () => {
                       <th className="border border-border p-3 text-left">Title</th>
                       <th className="border border-border p-3 text-left">Artist</th>
                       <th className="border border-border p-3 text-left">Album</th>
+                      <th className="border border-border p-3 text-left">Type</th>
                       <th className="border border-border p-3 text-left">Duration</th>
                       <th className="border border-border p-3 text-left">Upload Date</th>
                       <th className="border border-border p-3 text-left">Status</th>
@@ -212,6 +223,12 @@ const AdminPendingMusic: React.FC = () => {
                         <td className="border border-border p-3 font-medium">{musicItem.title}</td>
                         <td className="border border-border p-3">{musicItem.artist || musicItem.user?.email}</td>
                         <td className="border border-border p-3">{musicItem.albumName || '-'}</td>
+                        <td className="border border-border p-3">
+                          <Badge variant={isVideoFile(musicItem.fileType) ? 'default' : 'secondary'} className="gap-1">
+                            {isVideoFile(musicItem.fileType) ? <Video className="w-3 h-3" /> : <Headphones className="w-3 h-3" />}
+                            {isVideoFile(musicItem.fileType) ? 'Video' : 'Audio'}
+                          </Badge>
+                        </td>
                         <td className="border border-border p-3">{formatDuration(musicItem.duration)}</td>
                         <td className="border border-border p-3">
                           {new Date(musicItem.uploadedDate).toLocaleDateString()}
@@ -380,17 +397,22 @@ const AdminPendingMusic: React.FC = () => {
                 <div>
                   <h3 className="text-lg font-semibold mb-4">File Actions</h3>
                   <div className="flex gap-2">
-                    <Button 
+                    <Button
                       onClick={() => {
                         if (selectedMusic.fileUrl) {
-                          const audio = new Audio(selectedMusic.fileUrl);
-                          audio.play().catch(console.error);
+                          if (isVideoFile(selectedMusic.fileType)) {
+                            setCurrentVideo({ url: selectedMusic.fileUrl, title: selectedMusic.title });
+                            setVideoPlayerOpen(true);
+                          } else {
+                            const audio = new Audio(selectedMusic.fileUrl);
+                            audio.play().catch(console.error);
+                          }
                         }
                       }}
                       className="gap-2"
                     >
                       <Play className="h-4 w-4" />
-                      Play Track
+                      {isVideoFile(selectedMusic.fileType) ? 'Play Video' : 'Play Track'}
                     </Button>
                     <Button 
                       variant="outline"
@@ -509,6 +531,16 @@ const AdminPendingMusic: React.FC = () => {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Video Player Dialog */}
+        {currentVideo && (
+          <VideoPlayerDialog
+            open={videoPlayerOpen}
+            onOpenChange={setVideoPlayerOpen}
+            videoUrl={currentVideo.url}
+            title={currentVideo.title}
+          />
+        )}
       </div>
     </DashboardLayout>
   );

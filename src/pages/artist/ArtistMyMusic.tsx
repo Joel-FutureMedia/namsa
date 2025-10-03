@@ -12,27 +12,32 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { artistAPI, lookupAPI } from '@/services/api';
 import { ArtistWork, ArtistUploadType, ArtistWorkType } from '@/types';
-import { 
-  Edit, 
-  Trash2, 
-  Eye, 
-  Play, 
-  Download, 
-  Music, 
-  CheckCircle, 
-  Clock, 
+import {
+  Edit,
+  Trash2,
+  Eye,
+  Play,
+  Download,
+  Music,
+  CheckCircle,
+  Clock,
   XCircle,
   Upload,
   Save,
   ArrowLeft,
-  ArrowRight
+  ArrowRight,
+  Video,
+  Headphones
 } from 'lucide-react';
+import VideoPlayerDialog from '@/components/common/VideoPlayerDialog';
 
 const ArtistMyMusic: React.FC = () => {
   const [rows, setRows] = useState<ArtistWork[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingMusic, setEditingMusic] = useState<ArtistWork | null>(null);
   const [viewingMusic, setViewingMusic] = useState<ArtistWork | null>(null);
+  const [videoPlayerOpen, setVideoPlayerOpen] = useState(false);
+  const [currentVideo, setCurrentVideo] = useState<{ url: string; title: string } | null>(null);
   const [editForm, setEditForm] = useState<any>({});
   const [editCurrentPage, setEditCurrentPage] = useState(1);
   const [saving, setSaving] = useState(false);
@@ -165,18 +170,28 @@ const ArtistMyMusic: React.FC = () => {
     }
   };
 
+  const isVideoFile = (fileType: string) => {
+    const videoTypes = ['video', 'mp4', 'avi', 'mov', 'mkv', 'webm'];
+    return videoTypes.some(type => fileType?.toLowerCase().includes(type));
+  };
+
   const handlePlay = (music: ArtistWork) => {
     if (music.fileUrl) {
-      const audio = new Audio(music.fileUrl);
-      audio.play().catch(console.error);
-      toast({
-        title: "Now Playing",
-        description: `${music.title} by ${music.artist}`,
-      });
+      if (isVideoFile(music.fileType)) {
+        setCurrentVideo({ url: music.fileUrl, title: music.title });
+        setVideoPlayerOpen(true);
+      } else {
+        const audio = new Audio(music.fileUrl);
+        audio.play().catch(console.error);
+        toast({
+          title: "Now Playing",
+          description: `${music.title} by ${music.artist}`,
+        });
+      }
     } else {
       toast({
-        title: "Audio Not Available",
-        description: "No audio file available for this track",
+        title: "Media Not Available",
+        description: "No media file available for this track",
         variant: "destructive",
       });
     }
@@ -213,9 +228,23 @@ const ArtistMyMusic: React.FC = () => {
     { key: 'artist', header: 'Artist', accessor: 'artist' },
     { key: 'albumName', header: 'Album', accessor: 'albumName' },
     { key: 'duration', header: 'Duration', accessor: 'duration' },
-    { 
-      key: 'status', 
-      header: 'Status', 
+    {
+      key: 'fileType',
+      header: 'Type',
+      accessor: 'fileType',
+      render: (value) => {
+        const isVideo = isVideoFile(value || '');
+        return (
+          <Badge variant={isVideo ? 'default' : 'secondary'} className="gap-1">
+            {isVideo ? <Video className="w-3 h-3" /> : <Headphones className="w-3 h-3" />}
+            {isVideo ? 'Video' : 'Audio'}
+          </Badge>
+        );
+      }
+    },
+    {
+      key: 'status',
+      header: 'Status',
       accessor: 'status',
       render: (value) => getStatusBadge((value?.statusName || value?.status || 'PENDING'))
     },
@@ -460,6 +489,16 @@ const ArtistMyMusic: React.FC = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Video Player Dialog */}
+        {currentVideo && (
+          <VideoPlayerDialog
+            open={videoPlayerOpen}
+            onOpenChange={setVideoPlayerOpen}
+            videoUrl={currentVideo.url}
+            title={currentVideo.title}
+          />
+        )}
       </div>
     </DashboardLayout>
   );

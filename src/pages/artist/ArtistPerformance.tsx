@@ -2,16 +2,21 @@ import React, { useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { artistAPI, companyAPI } from '@/services/api';
 import { ArtistWork, LogSheet } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { Search } from 'lucide-react';
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
 
 const ArtistPerformance: React.FC = () => {
   const [tracks, setTracks] = useState<ArtistWork[]>([]);
   const [logSheets, setLogSheets] = useState<LogSheet[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTrackId, setSelectedTrackId] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -77,6 +82,41 @@ const ArtistPerformance: React.FC = () => {
     return Object.entries(selectedPerformance.companies).map(([company, count]) => ({ company, count }));
   }, [selectedPerformance]);
 
+  const pieChartData = useMemo(() => {
+    if (!selectedPerformance) return [];
+    return Object.entries(selectedPerformance.companies).map(([company, count]) => ({ name: company, value: count }));
+  }, [selectedPerformance]);
+
+  const historicalData = useMemo(() => {
+    if (!selectedTrackId) return [];
+    const dataByMonth: Record<string, number> = {};
+
+    for (const sheet of logSheets) {
+      const date = new Date(sheet.createdDate);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+      for (const m of sheet.selectedMusic || []) {
+        if ((m as any).id === selectedTrackId) {
+          dataByMonth[monthKey] = (dataByMonth[monthKey] || 0) + 1;
+        }
+      }
+    }
+
+    return Object.entries(dataByMonth)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([month, count]) => ({ month, count }));
+  }, [selectedTrackId, logSheets]);
+
+  const filteredTracks = useMemo(() => {
+    if (!searchQuery.trim()) return tracks;
+    const query = searchQuery.toLowerCase();
+    return tracks.filter(t =>
+      t.title?.toLowerCase().includes(query) ||
+      t.artist?.toLowerCase().includes(query) ||
+      t.albumName?.toLowerCase().includes(query)
+    );
+  }, [tracks, searchQuery]);
+
   return (
     <DashboardLayout title="Performance">
       <div className="space-y-6">
@@ -96,14 +136,23 @@ const ArtistPerformance: React.FC = () => {
               <p className="text-muted-foreground">You have no uploaded tracks yet.</p>
             ) : (
               <div className="space-y-4">
-                <div className="w-64">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search tracks by title, artist, album..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
                   <Select value={selectedTrackId?.toString() || ''} onValueChange={(v) => setSelectedTrackId(v ? parseInt(v) : null)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select track" />
                     </SelectTrigger>
                     <SelectContent>
-                      {tracks.map((t) => (
-                        <SelectItem key={t.id} value={t.id.toString()}>{t.title}</SelectItem>
+                      {filteredTracks.map((t) => (
+                        <SelectItem key={t.id} value={t.id.toString()}>{t.title} - {t.artist || 'Unknown'}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -135,7 +184,7 @@ const ArtistPerformance: React.FC = () => {
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-semibold">Companies Chart</h3>
+                    <h3 className="text-lg font-semibold">Companies Bar Chart</h3>
                     <div style={{ width: '100%', height: 300 }} className="mt-2">
                       {chartData.length === 0 ? (
                         <div className="h-48 flex items-center justify-center text-sm text-muted-foreground">No data to display</div>
@@ -153,6 +202,61 @@ const ArtistPerformance: React.FC = () => {
                       )}
                     </div>
                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Company Distribution (Pie Chart)</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {pieChartData.length === 0 ? (
+                        <div className="h-48 flex items-center justify-center text-sm text-muted-foreground">No data to display</div>
+                      ) : (
+                        <ResponsiveContainer width="100%" height={300}>
+                          <PieChart>
+                            <Pie
+                              data={pieChartData}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              label={(entry) => `${entry.name}: ${entry.value}`}
+                              outerRadius={80}
+                              fill="#8884d8"
+                              dataKey="value"
+                            >
+                              {pieChartData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Historical Trend</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {historicalData.length === 0 ? (
+                        <div className="h-48 flex items-center justify-center text-sm text-muted-foreground">No historical data available</div>
+                      ) : (
+                        <ResponsiveContainer width="100%" height={300}>
+                          <LineChart data={historicalData} margin={{ top: 10, right: 20, left: 0, bottom: 40 }}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="month" angle={-45} textAnchor="end" height={80} />
+                            <YAxis />
+                            <Tooltip />
+                            <Legend />
+                            <Line type="monotone" dataKey="count" stroke="#8884d8" strokeWidth={2} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      )}
+                    </CardContent>
+                  </Card>
                 </div>
               </div>
             )}
