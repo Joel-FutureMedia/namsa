@@ -15,20 +15,7 @@ import { MemberDetails, MemberDetailsForm, LogSheet } from '@/types';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { 
-  User, 
-  FileText, 
-  Image, 
-  Eye, 
-  Edit, 
-  Upload, 
-  CheckCircle, 
-  Clock, 
-  XCircle,
-  ArrowRight,
-  ArrowLeft,
-  Save
-} from 'lucide-react';
+import { User, FileText, Image, Eye, CreditCard as Edit, Upload, CircleCheck as CheckCircle, Clock, Circle as XCircle, ArrowRight, ArrowLeft, Save } from 'lucide-react';
 
 const ArtistProfile: React.FC = () => {
   const [profile, setProfile] = useState<MemberDetails | null>(null);

@@ -3,7 +3,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import StatsCard from '@/components/common/StatsCard';
 import { artistAPI } from '@/services/api';
 import { ArtistStats } from '@/types';
-import { Music, CheckCircle, FileText, BarChart3 } from 'lucide-react';
+import { Music, CircleCheck as CheckCircle, FileText, ChartBar as BarChart3 } from 'lucide-react';
 
 const ArtistStats: React.FC = () => {
   const [stats, setStats] = useState<ArtistStats | null>(null);

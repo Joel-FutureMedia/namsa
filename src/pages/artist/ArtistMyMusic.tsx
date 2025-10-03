@@ -12,23 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { artistAPI, lookupAPI } from '@/services/api';
 import { ArtistWork, ArtistUploadType, ArtistWorkType } from '@/types';
-import {
-  Edit,
-  Trash2,
-  Eye,
-  Play,
-  Download,
-  Music,
-  CheckCircle,
-  Clock,
-  XCircle,
-  Upload,
-  Save,
-  ArrowLeft,
-  ArrowRight,
-  Video,
-  Headphones
-} from 'lucide-react';
+import { CreditCard as Edit, Trash2, Eye, Play, Download, Music, CircleCheck as CheckCircle, Clock, Circle as XCircle, Upload, Save, ArrowLeft, ArrowRight, Video, Headphones } from 'lucide-react';
 import VideoPlayerDialog from '@/components/common/VideoPlayerDialog';
 
 const ArtistMyMusic: React.FC = () => {

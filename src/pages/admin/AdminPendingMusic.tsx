@@ -11,20 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { adminAPI } from '@/services/api';
 import { ArtistWork } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import {
-  CheckCircle,
-  XCircle,
-  Play,
-  Download,
-  Eye,
-  Music,
-  Clock,
-  User,
-  Calendar,
-  FileText,
-  Video,
-  Headphones
-} from 'lucide-react';
+import { CircleCheck as CheckCircle, Circle as XCircle, Play, Download, Eye, Music, Clock, User, Calendar, FileText, Video, Headphones } from 'lucide-react';
 import VideoPlayerDialog from '@/components/common/VideoPlayerDialog';
 
 const AdminPendingMusic: React.FC = () => {
